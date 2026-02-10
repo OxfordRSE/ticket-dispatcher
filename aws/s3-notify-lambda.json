@@ -1,0 +1,8 @@
+{
+  "LambdaFunctionConfigurations": [
+    {
+      "LambdaFunctionArn": "arn:aws:lambda:$AWS_REGION:$ACCOUNT_ID:function:ticket-dispatcher",
+      "Events": ["s3:ObjectCreated:*"]
+    }
+  ]
+}
