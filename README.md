@@ -12,6 +12,7 @@ To build and test locally:
 
 ```shell
 git clone https://github.com/OxfordRSE/ticket-dispatcher
+cd ticket-dispatcher
 go build
 go test
 ```
@@ -92,7 +93,7 @@ assumes that you will be handling emails to `NNN@anomalies.unseen.ac.uk`.
   spam/virus scanning, click Next, set `anomalies.unseen.ac.uk` as the
   *Recipient condition*, click Next to add an action.
 * **Adding SES action**: Add a SES action to deliver to a S3 bucket (which
-  should be allowed by the policy in the previous seciton), enter the bucket
+  should be allowed by the policy in the previous section), enter the bucket
   name, review and save the rule.
 * **Test email delivery**: Create a new email to 123@anomalies.unseen.ac.uk and
   ensure that it delivers to the S3 bucket.
