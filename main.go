@@ -115,3 +115,26 @@ func main() {
 	initS3()
 	lambda.Start(handler)
 }
+
+func debugMain() {
+	if len(os.Args) < 2 {
+		fmt.Println("usage: ./ticket-dispatcher <filename>")
+		return
+	}
+	file, err := os.Open(os.Args[1])
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	defer file.Close()
+
+	msg, err := mail.ReadMessage(file)
+	if err != nil {
+		log.Fatalf("error parsing email: %v", err)
+	}
+	body, err := extractBodyAsMarkdown(msg)
+	if err != nil {
+		log.Fatalf("error extracting body: %v", err)
+	} else {
+		fmt.Println(body)
+	}
+}

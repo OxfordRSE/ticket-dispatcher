@@ -48,6 +48,9 @@ func extractBodyAsMarkdown(msg *mail.Message) (string, error) {
 			if perr == io.EOF {
 				break
 			}
+			pct := part.Header.Get("Content-Type")
+			pcte := part.Header.Get("Content-Transfer-Encoding")
+			ptype, pparams, _ := mime.ParseMediaType(pct)
 			if perr != nil {
 				return "", perr
 			}
@@ -55,9 +58,6 @@ func extractBodyAsMarkdown(msg *mail.Message) (string, error) {
 			if disp := strings.ToLower(part.Header.Get("Content-Disposition")); strings.HasPrefix(disp, "attachment") {
 				continue
 			}
-			pct := part.Header.Get("Content-Type")
-			pcte := part.Header.Get("Content-Transfer-Encoding")
-			ptype, _, _ := mime.ParseMediaType(pct)
 			switch ptype {
 			case "text/plain":
 				b, e := readAndDecodePart(part, pct, pcte)
@@ -71,6 +71,9 @@ func extractBodyAsMarkdown(msg *mail.Message) (string, error) {
 					return "", e
 				}
 				firstHTML = string(b)
+			case "multipart/alternative":
+				mr = multipart.NewReader(part, pparams["boundary"])
+				continue
 			default:
 				return "", errors.New("no text part found")
 			}
