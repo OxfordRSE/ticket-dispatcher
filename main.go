@@ -135,6 +135,6 @@ func debugMain() {
 	if err != nil {
 		log.Fatalf("error extracting body: %v", err)
 	} else {
-		fmt.Println(body)
+		fmt.Println(hideQuotedPart(body, true))
 	}
 }

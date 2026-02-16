@@ -14,6 +14,7 @@ import (
 	"net/mail"
 	"regexp"
 	"strings"
+	"unicode"
 
 	"golang.org/x/net/html/charset"
 )
@@ -148,6 +149,10 @@ func readAndDecodePart(r io.Reader, contentType, cteHeader string) ([]byte, erro
 	return convBytes, nil
 }
 
+func hasLetter(s string) bool {
+	return strings.ContainsFunc(s, unicode.IsLetter)
+}
+
 // hideQuotedPart scans plain/markdown text for quoted email context and,
 // if found, moves it into a collapsible <details> block.
 func hideQuotedPart(md string, removeQuotes bool) string {
@@ -223,7 +228,7 @@ func hideQuotedPart(md string, removeQuotes bool) string {
 		strings.TrimRight(quoted, "\n") + "\n\n</details>"
 
 	// If visible body is empty (e.g., purely quoted), we still show a short header
-	if strings.TrimSpace(visible) == "" {
+	if strings.TrimSpace(visible) == "" || !hasLetter(visible) {
 		// show a short intro and then details
 		return details
 	}
