@@ -71,7 +71,7 @@ func extractBodyAsMarkdown(msg *mail.Message) (string, error) {
 					return "", e
 				}
 				firstHTML = string(b)
-			case "multipart/alternative":
+			case "multipart/alternative", "multipart/related", "multipart/mixed":
 				mr = multipart.NewReader(part, pparams["boundary"])
 				continue
 			default:
