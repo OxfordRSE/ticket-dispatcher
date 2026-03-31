@@ -82,7 +82,7 @@ func handler(ctx context.Context, s3Event events.S3Event) error {
 		subject := msg.Header.Get("Subject")
 		auth := msg.Header.Get("Authentication-Results")
 
-		issue := extractIssueNumber(toHeader, ccHeader)
+		issue, repoSuffix := extractIssueNumber(toHeader, ccHeader)
 		senderDomain := extractSenderDomain(fromHeader)
 
 		if !strings.Contains(auth, "spf=pass") && !strings.Contains(auth, "dkim=pass") {
@@ -94,13 +94,21 @@ func handler(ctx context.Context, s3Event events.S3Event) error {
 		if issue == "" {
 			log.Fatalf("no issue number found in To: or Cc:")
 		}
-		log.Printf("%s | From: %s; To: %s; Subject: %s\n", msgId, fromHeader, toHeader, subject)
+		effectiveProject := githubProject
+		if repoSuffix != "" && githubProject != "" {
+			org := githubProject
+			if i := strings.IndexByte(githubProject, '/'); i >= 0 {
+				org = githubProject[:i]
+			}
+			effectiveProject = org + "/" + repoSuffix
+		}
+		log.Printf("%s | From: %s; To: %s; Subject: %s; Project: %s\n", msgId, fromHeader, toHeader, subject, effectiveProject)
 		body, err := extractBodyAsMarkdown(msg)
 		if err != nil {
 			log.Fatalf("error in extracting message body")
 		} else {
 			header := fmt.Sprintf("From: %s\n\n", fromHeader)
-			err := postIssueComment(issue, msgId, header+hideQuotedPart(body, removeQuotes))
+			err := postIssueComment(effectiveProject, issue, msgId, header+hideQuotedPart(body, removeQuotes))
 			if err != nil {
 				log.Printf("postIssueComment err=%v", err)
 			}

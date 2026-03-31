@@ -16,8 +16,8 @@ type ghComment struct {
 	Body string `json:"body"`
 }
 
-func postIssueComment(issueNumber, msgId, comment string) error {
-	exists, err := commentWithMessageIDExists(issueNumber, msgId)
+func postIssueComment(project, issueNumber, msgId, comment string) error {
+	exists, err := commentWithMessageIDExists(project, issueNumber, msgId)
 	// only suppress posting if we get confirmation that Message-ID was found
 	// better to post twice than silently fail
 	if exists {
@@ -33,7 +33,7 @@ func postIssueComment(issueNumber, msgId, comment string) error {
 
 	url := fmt.Sprintf(
 		"https://api.github.com/repos/%s/issues/%s/comments",
-		githubProject, issueNumber,
+		project, issueNumber,
 	)
 	payload := map[string]string{
 		"body": fmt.Sprintf("Message-ID: %s\n", msgId) + comment,
@@ -72,7 +72,7 @@ func postIssueComment(issueNumber, msgId, comment string) error {
 
 // commentWithMessageIDExists checks whether an issue already has a comment
 // whose first line contains the given Message-ID (exact match or contains).
-func commentWithMessageIDExists(issueNumber, messageID string) (bool, error) {
+func commentWithMessageIDExists(project, issueNumber, messageID string) (bool, error) {
 	token := os.Getenv("GITHUB_TOKEN")
 
 	if token == "" {
@@ -86,7 +86,7 @@ func commentWithMessageIDExists(issueNumber, messageID string) (bool, error) {
 	for {
 		url := fmt.Sprintf(
 			"https://api.github.com/repos/%s/issues/%s/comments?per_page=100&page=%d",
-			githubProject, issueNumber, page,
+			project, issueNumber, page,
 		)
 
 		req, err := http.NewRequest(http.MethodGet, url, nil)

@@ -6,8 +6,9 @@ import (
 	"unicode"
 )
 
-// extractIssueNumber scans To and Cc headers and returns the first numeric local-part found.
-func extractIssueNumber(toHeader, ccHeader string) string {
+// extractIssueNumber scans To and Cc headers and returns the first numeric local-part found,
+// along with an optional repo suffix extracted from a + tag (e.g. 123+myrepo@domain → "123", "myrepo").
+func extractIssueNumber(toHeader, ccHeader string) (issueNumber, repoSuffix string) {
 	// Combine headers; ParseAddressList handles comma-separated lists
 	headers := []string{toHeader, ccHeader}
 
@@ -24,8 +25,9 @@ func extractIssueNumber(toHeader, ccHeader string) string {
 			for _, p := range parts {
 				if strings.Contains(p, "@") {
 					stringParts := strings.SplitN(p, "@", 2)
-					if isDigits(stringParts[0]) && stringParts[1] == ticketDomain {
-						return stringParts[0]
+					num, repo := splitLocalPart(stringParts[0])
+					if isDigits(num) && stringParts[1] == ticketDomain {
+						return num, repo
 					}
 				}
 			}
@@ -42,12 +44,22 @@ func extractIssueNumber(toHeader, ccHeader string) string {
 			}
 			local := parts[0]
 			domain := parts[1]
-			if isDigits(local) && domain == ticketDomain {
-				return local
+			num, repo := splitLocalPart(local)
+			if isDigits(num) && domain == ticketDomain {
+				return num, repo
 			}
 		}
 	}
-	return ""
+	return "", ""
+}
+
+// splitLocalPart splits an email local part on the first '+'.
+// "123+myrepo" → ("123", "myrepo"); "123" → ("123", "").
+func splitLocalPart(local string) (num, repo string) {
+	if i := strings.IndexByte(local, '+'); i >= 0 {
+		return local[:i], local[i+1:]
+	}
+	return local, ""
 }
 
 // extractSenderDomain parses the From header and returns the domain (lowercased) or empty string.
