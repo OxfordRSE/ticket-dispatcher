@@ -142,3 +142,22 @@ Once deployed, the ticket-dispatcher lambda function can be updated by calling
 ```
 
 **Logs**: Cloudwatch logs can be found at `/aws/lambda/ticket-dispatcher`
+
+## Updating settings
+
+Settings are stored in environment variables and can be updated via the AWS web console
+(AWS Lambda > Functions > ticket-dispatcher > Configuration > Environment variables) or
+via CLI. The snippet below requires `jq` and a query for the existing configuration
+as the environment variables are replaced entirely, so we can't set a single variable.
+
+```shell
+aws lambda get-function-configuration \
+  --function-name ticket-dispatcher \
+  --query "Environment.Variables" \
+  --output json | \
+jq '.WHITELIST_DOMAIN="domain.com,foobar.org"' | \
+jq -c '{Variables: .}' | \
+xargs -I {} aws lambda update-function-configuration \
+  --function-name ticket-dispatcher \
+  --environment '{}'
+```
