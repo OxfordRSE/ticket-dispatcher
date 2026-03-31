@@ -18,24 +18,28 @@ import (
 )
 
 var (
-	ticketDomain    string
-	githubProject   string
-	whitelistDomain string
-	s3Client        *s3.Client
+	ticketDomain     string
+	githubProject    string
+	whitelistDomains []string
+	s3Client         *s3.Client
 )
 
 func loadConfig() {
 	// read env vars
 	ticketDomain = os.Getenv("TICKET_DISPATCHER_DOMAIN")
-	whitelistDomain = os.Getenv("WHITELIST_DOMAIN")
+	for _, d := range strings.Split(os.Getenv("WHITELIST_DOMAIN"), ",") {
+		if d = strings.ToLower(strings.TrimSpace(d)); d != "" {
+			whitelistDomains = append(whitelistDomains, d)
+		}
+	}
 	githubProject = os.Getenv("GITHUB_PROJECT")
 
 	if ticketDomain == "" {
 		log.Fatalf("TICKET_DISPATCHER_DOMAIN is not set, example: issues.example.com")
 	}
 
-	if whitelistDomain == "" {
-		log.Fatalf("WHITELIST_DOMAIN is unset, set to a domain that is allowed to send emails")
+	if len(whitelistDomains) == 0 {
+		log.Fatalf("WHITELIST_DOMAIN is unset, set to a comma-separated list of domains allowed to send emails")
 	}
 
 	if githubProject == "" {
@@ -88,8 +92,8 @@ func handler(ctx context.Context, s3Event events.S3Event) error {
 		if !strings.Contains(auth, "spf=pass") && !strings.Contains(auth, "dkim=pass") {
 			log.Fatalf("%s authentication failure, possibly spoofed", msgId)
 		}
-		if !strings.HasSuffix(senderDomain, whitelistDomain) {
-			log.Fatalf("sender does not have a '%s' email address", whitelistDomain)
+		if !senderDomainAllowed(senderDomain) {
+			log.Fatalf("sender domain '%s' is not in the whitelist", senderDomain)
 		}
 		if issue == "" {
 			log.Fatalf("no issue number found in To: or Cc:")

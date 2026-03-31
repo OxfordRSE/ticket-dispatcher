@@ -16,7 +16,7 @@ GITHUB_TOKEN                A personal access token with scoped 'issues:write'
                             access for the repository to which emails are sent
 ACCOUNT_ID                  AWS account ID
 TICKET_DISPATCHER_DOMAIN    Domain for which SES is set up (e.g. issues.example.com)
-WHITELIST_DOMAIN            Domain from which emails are accepted
+WHITELIST_DOMAIN            Comma-separated list of domains from which emails are accepted
 GITHUB_PROJECT              GitHub project whose issues will be updated
 AWS_REGION                  AWS region where infrastructure is setup
 TAGS                        AWS tags to apply to created resources created

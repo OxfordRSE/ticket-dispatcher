@@ -119,7 +119,7 @@ Set the environment variables in `.env`, `ACCOUNT_ID` is the AWS account ID, and
 ```shell
 GITHUB_TOKEN=...
 TICKET_DISPATCHER_DOMAIN=anomalies.unseen.ac.uk
-WHITELIST_DOMAIN=unseen.ac.uk
+WHITELIST_DOMAIN=unseen.ac.uk,partner.org
 GITHUB_PROJECT=org/repo
 AWS_REGION=eu-west-2
 ACCOUNT_ID=123456789

@@ -11,9 +11,9 @@ func setupTests(t *testing.T) {
 func TestExtractIssueNumber(t *testing.T) {
 	setupTests(t)
 	tests := []struct {
-		to         string
-		wantIssue  string
-		wantRepo   string
+		to        string
+		wantIssue string
+		wantRepo  string
 	}{
 		{
 			to:        "John Doe <johndoe@example.com>",
@@ -45,6 +45,36 @@ func TestExtractIssueNumber(t *testing.T) {
 			}
 			if gotRepo != tc.wantRepo {
 				t.Errorf("extractIssueNumber repo mismatch:\n--- got ---\n%q\n--- want ---\n%q\n", gotRepo, tc.wantRepo)
+			}
+		})
+	}
+}
+
+func TestSenderDomainAllowed(t *testing.T) {
+	tests := []struct {
+		whitelist string
+		domain    string
+		want      bool
+	}{
+		{whitelist: "example.com", domain: "example.com", want: true},
+		{whitelist: "example.com", domain: "sub.example.com", want: true},
+		{whitelist: "example.com", domain: "EXAMPLE.COM", want: true},
+		{whitelist: "EXAMPLE.COM", domain: "example.com", want: true},
+		{whitelist: "example.com", domain: "notexample.com", want: false},
+		{whitelist: "example.com", domain: "other.org", want: false},
+		{whitelist: "example.com,other.org", domain: "other.org", want: true},
+		{whitelist: "example.com, other.org", domain: "sub.other.org", want: true},
+		{whitelist: "example.com,other.org", domain: "unrelated.net", want: false},
+	}
+	for _, tc := range tests {
+		t.Run(tc.whitelist+"|"+tc.domain, func(t *testing.T) {
+			t.Setenv("TICKET_DISPATCHER_DOMAIN", "issues.example.com")
+			t.Setenv("WHITELIST_DOMAIN", tc.whitelist)
+			t.Setenv("GITHUB_PROJECT", "example/repo")
+			loadConfig()
+			got := senderDomainAllowed(tc.domain)
+			if got != tc.want {
+				t.Errorf("senderDomainAllowed(%q) with whitelist %q: got %v, want %v", tc.domain, tc.whitelist, got, tc.want)
 			}
 		})
 	}
