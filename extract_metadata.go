@@ -62,6 +62,17 @@ func splitLocalPart(local string) (num, repo string) {
 	return local, ""
 }
 
+// checks against whitelisted domains to see if sender allowed
+func senderDomainAllowed(domain string) bool {
+	domain = strings.ToLower(domain)
+	for _, d := range whitelistDomains {
+		if domain == d || strings.HasSuffix(domain, "."+d) {
+			return true
+		}
+	}
+	return false
+}
+
 // extractSenderDomain parses the From header and returns the domain (lowercased) or empty string.
 func extractSenderDomain(fromHeader string) string {
 	if fromHeader == "" {
