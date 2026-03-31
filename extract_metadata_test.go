@@ -11,22 +11,40 @@ func setupTests(t *testing.T) {
 func TestExtractIssueNumber(t *testing.T) {
 	setupTests(t)
 	tests := []struct {
-		to   string
-		want string
-	}{{
-		to:   "John Doe <johndoe@example.com>",
-		want: "",
-	},
-		{to: "John Doe <johndoe@example.com>, 123@issues.example.com",
-			want: "123",
+		to         string
+		wantIssue  string
+		wantRepo   string
+	}{
+		{
+			to:        "John Doe <johndoe@example.com>",
+			wantIssue: "",
+			wantRepo:  "",
+		},
+		{
+			to:        "John Doe <johndoe@example.com>, 123@issues.example.com",
+			wantIssue: "123",
+			wantRepo:  "",
+		},
+		{
+			to:        "123+myrepo@issues.example.com",
+			wantIssue: "123",
+			wantRepo:  "myrepo",
+		},
+		{
+			to:        "John Doe <johndoe@example.com>, 456+other-repo@issues.example.com",
+			wantIssue: "456",
+			wantRepo:  "other-repo",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.to, func(t *testing.T) {
-			got := extractIssueNumber(tc.to, "")
-			if got != tc.want {
-				t.Errorf("extractIssueNumber mismatch:\n--- got ---\n%q\n--- want ---\n%q\n", got, tc.want)
+			gotIssue, gotRepo := extractIssueNumber(tc.to, "")
+			if gotIssue != tc.wantIssue {
+				t.Errorf("extractIssueNumber issue mismatch:\n--- got ---\n%q\n--- want ---\n%q\n", gotIssue, tc.wantIssue)
+			}
+			if gotRepo != tc.wantRepo {
+				t.Errorf("extractIssueNumber repo mismatch:\n--- got ---\n%q\n--- want ---\n%q\n", gotRepo, tc.wantRepo)
 			}
 		})
 	}

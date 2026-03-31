@@ -1,8 +1,15 @@
 # ticket-dispatcher
 
 ticket-dispatcher posts comments on GitHub issues via email sent to a specific
-domain such as `NNN@issues.example.com` which will post to a GitHub repository
-for issue NNN.
+domain such as `NNN@issues.example.com` which will post to an issue in the
+GitHub repository `org/foo` defined via the `GITHUB_PROJECT` environment
+variable.
+
+Emails sent to
+[sub-addresses](https://en.wikipedia.org/wiki/Email_address#Sub-addressing)
+such as `NNN+other-project@issues.example.com` where `other-project` is the
+sub-address or tag, are forwarded to org/other-project, with the organisation
+name `org` determined from `GITHUB_PROJECT`.
 
 ## Development
 
@@ -16,6 +23,12 @@ cd ticket-dispatcher
 go build
 go test
 ```
+
+## Infrastructure
+
+ticket-dispatcher is currently deployed on AWS infrastructure and makes use of
+AWS Lambda for the ticket-dispatcher function, AWS SES for email receiving and
+AWS S3 for email storage.
 
 ## Deployment
 
