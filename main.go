@@ -86,8 +86,12 @@ func handler(ctx context.Context, s3Event events.S3Event) error {
 		subject := msg.Header.Get("Subject")
 		auth := msg.Header.Get("Authentication-Results")
 
+		isNew, repoSuffixNew := extractNewStatus(toHeader)
 		issue, repoSuffix := extractIssueNumber(toHeader, ccHeader)
 		senderDomain := extractSenderDomain(fromHeader)
+		if repoSuffixNew != "" {
+			repoSuffix = repoSuffixNew
+		}
 
 		if !strings.Contains(auth, "spf=pass") && !strings.Contains(auth, "dkim=pass") {
 			log.Fatalf("%s authentication failure, possibly spoofed", msgId)
@@ -95,7 +99,7 @@ func handler(ctx context.Context, s3Event events.S3Event) error {
 		if !senderDomainAllowed(senderDomain) {
 			log.Fatalf("sender domain '%s' is not in the whitelist", senderDomain)
 		}
-		if issue == "" {
+		if issue == "" && !isNew {
 			log.Fatalf("no issue number found in To: or Cc:")
 		}
 		effectiveProject := githubProject
@@ -112,9 +116,16 @@ func handler(ctx context.Context, s3Event events.S3Event) error {
 			log.Fatalf("error in extracting message body")
 		} else {
 			header := fmt.Sprintf("From: %s\n\n", fromHeader)
-			err := postIssueComment(effectiveProject, issue, msgId, header+hideQuotedPart(body, removeQuotes))
-			if err != nil {
-				log.Printf("postIssueComment err=%v", err)
+			if !isNew {
+				err := postIssueComment(effectiveProject, issue, msgId, header+hideQuotedPart(body, removeQuotes))
+				if err != nil {
+					log.Printf("postIssueComment err=%v", err)
+				}
+			} else {
+				err := postIssue(effectiveProject, msgId, header+hideQuotedPart(body, false))
+				if err != nil {
+					log.Printf("postIssue err=%v", err)
+				}
 			}
 		}
 		os.Exit(0)
