@@ -161,3 +161,8 @@ xargs -I {} aws lambda update-function-configuration \
   --function-name ticket-dispatcher \
   --environment '{}'
 ```
+
+**Renewing GitHub token**: Before expiry of the current personal access token,
+regenerate the token (https://github.com/settings/personal-access-tokens) and
+update the `GITHUB_TOKEN` environment variable, either via the web console or
+the update script above.
