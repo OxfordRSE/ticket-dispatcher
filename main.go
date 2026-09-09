@@ -81,12 +81,11 @@ func handler(ctx context.Context, s3Event events.S3Event) error {
 
 		msgId := msg.Header.Get("Message-ID")
 		toHeader := msg.Header.Get("To")
-		ccHeader := msg.Header.Get("Cc")
 		fromHeader := msg.Header.Get("From")
 		subject := msg.Header.Get("Subject")
 		auth := msg.Header.Get("Authentication-Results")
 
-		issue, repoSuffix := extractIssueNumber(toHeader, ccHeader)
+		issue, repoSuffix := extractIssueNumber(msg.Header)
 		senderDomain := extractSenderDomain(fromHeader)
 
 		if !strings.Contains(auth, "spf=pass") && !strings.Contains(auth, "dkim=pass") {
@@ -96,7 +95,7 @@ func handler(ctx context.Context, s3Event events.S3Event) error {
 			log.Fatalf("sender domain '%s' is not in the whitelist", senderDomain)
 		}
 		if issue == "" {
-			log.Fatalf("no issue number found in To: or Cc:")
+			log.Fatalf("no issue number found in the recipient headers")
 		}
 		effectiveProject := githubProject
 		if repoSuffix != "" && githubProject != "" {

@@ -2,16 +2,37 @@ package main
 
 import (
 	"net/mail"
+	"net/textproto"
 	"strings"
 	"unicode"
 )
 
-// extractIssueNumber scans To and Cc headers and returns the first numeric local-part found,
-// along with an optional repo suffix extracted from a + tag (e.g. 123+myrepo@domain → "123", "myrepo").
-func extractIssueNumber(toHeader, ccHeader string) (issueNumber, repoSuffix string) {
-	// Combine headers; ParseAddressList handles comma-separated lists
-	headers := []string{toHeader, ccHeader}
+// recipientHeaders are the header fields scanned for a ticket address, in order of
+// preference. Bcc is normally stripped before delivery, so an address that was only
+// Bcc'd is usually recovered from the delivery headers or the Received trace instead.
+var recipientHeaders = []string{"To", "Cc", "Bcc", "X-Original-To", "Delivered-To", "Envelope-To", "X-Envelope-To"}
 
+// extractIssueNumber scans the recipient headers of a message, including the envelope
+// recipients recorded in the Received trace, and returns the first numeric local-part
+// found at the ticket domain, along with an optional repo suffix extracted from a + tag
+// (e.g. 123+myrepo@domain → "123", "myrepo").
+func extractIssueNumber(h mail.Header) (issueNumber, repoSuffix string) {
+	var headers []string
+	for _, name := range recipientHeaders {
+		headers = append(headers, h[textproto.CanonicalMIMEHeaderKey(name)]...)
+	}
+	for _, received := range h["Received"] {
+		if addr := receivedFor(received); addr != "" {
+			headers = append(headers, addr)
+		}
+	}
+	return extractIssueNumberFrom(headers...)
+}
+
+// extractIssueNumberFrom scans address-list header values in order and returns the first
+// ticket address found.
+func extractIssueNumberFrom(headers ...string) (issueNumber, repoSuffix string) {
+	// ParseAddressList handles comma-separated lists
 	for _, h := range headers {
 		if h == "" {
 			continue
@@ -51,6 +72,24 @@ func extractIssueNumber(toHeader, ccHeader string) (issueNumber, repoSuffix stri
 		}
 	}
 	return "", ""
+}
+
+// receivedFor returns the envelope recipient from the "for" clause of a Received header,
+// or "" if it has none. Mail sent only to a Bcc'd address leaves no trace in the message
+// headers, but the receiving MTA records the RCPT TO address here; SES, for instance,
+// writes "by inbound-smtp.<region>.amazonaws.com with SMTP id <id> for <addr>; <date>".
+func receivedFor(received string) string {
+	// Trace fields end at the ';' that introduces the date
+	if i := strings.IndexByte(received, ';'); i >= 0 {
+		received = received[:i]
+	}
+	fields := strings.Fields(received)
+	for i, f := range fields {
+		if strings.EqualFold(f, "for") && i+1 < len(fields) {
+			return strings.Trim(fields[i+1], "<>,")
+		}
+	}
+	return ""
 }
 
 // splitLocalPart splits an email local part on the first '+'.
