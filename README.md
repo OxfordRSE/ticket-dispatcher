@@ -11,6 +11,12 @@ such as `NNN+other-project@issues.example.com` where `other-project` is the
 sub-address or tag, are forwarded to org/other-project, with the organisation
 name `org` determined from `GITHUB_PROJECT`.
 
+The ticket address can be in `To`, `Cc` or `Bcc`. As `Bcc` addresses are carried
+in the SMTP envelope rather than in the message itself, a Bcc'd ticket address is
+recovered from the delivery headers added by the receiving mail server
+(`Bcc`, `X-Original-To`, `Delivered-To`, `Envelope-To`, `X-Envelope-To`, or the
+`for` clause of a `Received` header — SES records the envelope recipient there).
+
 ## Development
 
 ticket-dispatcher requires Go >= 1.25.
